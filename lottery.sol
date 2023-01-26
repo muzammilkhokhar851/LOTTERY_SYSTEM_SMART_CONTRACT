@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.7.0 <0.9.0;
+
+contract Lottery{
+
+    address public manager;
+    address payable[] public participants;
+
+    constructor()
+    {
+        manager = msg.sender; //global variable
+    }
+
+    receive() external payable
+    {
+        require(msg.value >= 0.1 ether);
+        participants.push(payable(msg.sender));
+    }
+
+    function getBalance() public view returns(uint)
+    {
+        require(msg.sender == manager,"You are not the manager");
+        return address(this).balance;
+    }
+
+    function random()  public view returns(uint){
+
+       return uint(keccak256(abi.encodePacked(block.difficulty,block.timestamp,participants.length)));
+
+    } 
+
+
+    function selectWinner() payable public{
+
+        require(msg.sender==manager,"You are not the manager");
+        require(participants.length>=3,"Participant should be equal to or greater than three");
+
+        uint r=random();
+        address payable winner;
+        uint index = r % participants.length;
+        winner=participants[index];
+
+        winner.transfer(getBalance());
+
+        participants = new address payable[](0);
+
+    }
+}
